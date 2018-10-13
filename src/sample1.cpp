@@ -1,6 +1,8 @@
 
 #include "../include/umbrella.h"
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include "time.h"
 
 using namespace std;
@@ -12,7 +14,7 @@ int main(int argc, char* argv[])
     const string METEOMATICS_PASSWORD = "hrB4KtC585tS";
 
     std::string msg;            // returns http error messages, should there be one -- empty otherwise
-    bool success;
+    bool success = true;
 
     cout << "**********" << std::endl;
     cout << "> Initialising client..." << std::endl;
@@ -50,11 +52,15 @@ int main(int argc, char* argv[])
     // Single Point  (single coordinate, single time, one or more parameters)
     //
     std::vector<std::string> resultVector;
-    
+
+    while(success)
+    {
     success = api_client.getTimeSeries(startTime, stopTime, "T5M", parameters, lat, lon, resultMatrix, resultVector, msg, optionals);
 
     if (success)
     {
+        double max_chance = 0;
+
         cout << "**********" << std::endl;
         for(size_t i=0; i<resultMatrix.size(); ++i)
         {
@@ -63,20 +69,18 @@ int main(int argc, char* argv[])
             vector<double> v = resultMatrix[i];
             for(size_t j=0;j<v.size();++j)
             {
-                cout << v[j] << "%" << endl;
+//                cout << v[j] << "%" << endl;
+
+                max_chance = v[j] > max_chance ? v[j] : max_chance;
             }
-        }
-/*
 
-        std::cout << "Single Point Result:" << std::endl;
-
-        for (std::size_t i=0; i<parameters.size(); ++i)
-        {
-            std::cout << parameters[i] << " = " << resultVector[i] << std::endl;
         }
-        std::cout << std::endl;*/
-        success = false;
+            cout << max_chance << "%" << endl;
     }
     else
         std::cout << "Error msg = " << msg.substr(0,500) << "[...]" << std::endl << std::endl;
+
+    std::this_thread::sleep_for(chrono::seconds(30));
+
+    }
 }
