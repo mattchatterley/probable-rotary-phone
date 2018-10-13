@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 
     MeteomaticsApiClient api_client(METEOMATICS_USER, METEOMATICS_PASSWORD, 300);
 
-    std::vector<std::string> parameters = {"precip_15min:mm"};
+    std::vector<std::string> parameters = {"prob_precip_1h:p"};
 
     int year = api_client.getCurrentYear();
     int month = api_client.getCurrentMonth();
@@ -41,8 +41,8 @@ int main(int argc, char* argv[])
 
     Matrix resultMatrix;                                  // resultMatrix [time][parameter]
 
-    double lat = 50;
-    double lon = 10;
+    double lat = 49.1824757;
+    double lon = -2.1034523;
 
     std::vector<std::string> optionals = {"model=mix"};
 
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
             vector<double> v = resultMatrix[i];
             for(size_t j=0;j<v.size();++j)
             {
-                cout << v[j] << endl;
+                cout << v[j] << "%" << endl;
             }
         }
 /*
