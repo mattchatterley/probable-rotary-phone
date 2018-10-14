@@ -7,7 +7,8 @@
 
 using namespace std;
 
-int main(int argc, char* argv[])
+//int main(int argc, char* argv[])
+int main()
 {
     //https://api.meteomatics.com/2018-10-13T12:15:00ZPT30M:PT5M/precip_15min:mm/50,10/json?model=mix
     const string METEOMATICS_USER = "jersey-hackathon05";
@@ -17,7 +18,7 @@ int main(int argc, char* argv[])
     bool success = true;
 
     cout << "**********" << std::endl;
-    cout << "> Initialising client..." << std::endl;
+    //cout << "> Initialising client..." << std::endl;
 
     MeteomaticsApiClient api_client(METEOMATICS_USER, METEOMATICS_PASSWORD, 300);
 
@@ -34,10 +35,8 @@ int main(int argc, char* argv[])
     int min=uTime->tm_min;
 
     std::string startTime = api_client.getIsoTimeStr(year, month, day, hour, min, 0);
-    cout << "> " << startTime << std::endl;
-
     std::string stopTime = api_client.getIsoTimeStr(year, month, day, hour + 1, min, 0);
-    cout << "> " << stopTime << std::endl;
+    cout << startTime << " to " << stopTime << std::endl;
 
     std::vector<std::string> returnTimes;
 
@@ -55,6 +54,10 @@ int main(int argc, char* argv[])
 
     while(success)
     {
+    double rainRisk = 0.0;
+    bool quiteWindy = false;
+    bool tooWindy = false;
+
     success = api_client.getTimeSeries(startTime, stopTime, "T5M", parameters, lat, lon, resultMatrix, resultVector, msg, optionals);
 
     if (success)
@@ -69,16 +72,52 @@ int main(int argc, char* argv[])
             vector<double> v = resultMatrix[i];
             for(size_t j=0;j<v.size();++j)
             {
-//                cout << v[j] << "%" << endl;
+                //cout << v[j] << "%" << endl;
 
                 max_chance = v[j] > max_chance ? v[j] : max_chance;
             }
 
         }
-            cout << max_chance << "%" << endl;
+            cout << "MAX:" << max_chance << "%" << endl;
+
+            rainRisk = max_chance;
     }
     else
         std::cout << "Error msg = " << msg.substr(0,500) << "[...]" << std::endl << std::endl;
+
+    // wind_speed_80m:kmh
+    parameters = {"wind_speed_80m:kmh"};
+
+    success = api_client.getTimeSeries(startTime, stopTime, "T5M", parameters, lat, lon, resultMatrix, resultVector, msg, optionals);
+
+    if (success)
+    {
+        double max_speed = 0;
+
+        cout << "**********" << std::endl;
+        for(size_t i=0; i<resultMatrix.size(); ++i)
+        {
+           // cout << i << std::endl;
+
+            vector<double> v = resultMatrix[i];
+            for(size_t j=0;j<v.size();++j)
+            {
+                //cout << v[j] << "kmh" << endl;
+
+                max_speed = v[j] > max_speed ? v[j] : max_speed;
+            }
+
+        }
+            cout << "MAX:" << max_speed << "kmh" << endl;
+
+            quiteWindy = max_speed >= 30;
+            tooWindy = max_speed >= 41;
+    }
+    else
+        std::cout << "Error msg = " << msg.substr(0,500) << "[...]" << std::endl << std::endl;
+
+    // conclusion
+    cout << "Next Hour: " << rainRisk << "% chance of rain, wind is " << (tooWindy? "TOO STRONG" : (quiteWindy ? "QUITE STRONG" : "")) << endl;
 
     std::this_thread::sleep_for(chrono::seconds(30));
 
